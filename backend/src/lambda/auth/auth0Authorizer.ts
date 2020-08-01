@@ -52,12 +52,12 @@ export const handler = async (
             }
         };
     }
-}
+};
 const getSigningKey = async (jwkurl, kid) => {
     let res = await Axios.get(jwkurl, {
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Credentials': true,
         }
     });
@@ -68,31 +68,35 @@ const getSigningKey = async (jwkurl, kid) => {
         && key.kid           // The `kid` must be present to be useful for later
         && key.x5c && key.x5c.length // Has useful public keys (we aren't using n or e)
     ).map(key => {
-        return { kid: key.kid, nbf: key.nbf, publicKey: certToPEM(key.x5c[0]) };
+        return {kid: key.kid, nbf: key.nbf, publicKey: certToPEM(key.x5c[0])};
     });
     const signingKey = signingKeys.find(key => key.kid === kid);
     if (!signingKey) {
-        throw new Error('Invalid signing keys')
+        throw new Error('Invalid signing keys');
     }
-    logger.info("Signing keys created successfully ", signingKey)
-    return signingKey
+    logger.info('Signing keys created successfully ', signingKey);
+    return signingKey;
 };
+
 function certToPEM(cert) {
     cert = cert.match(/.{1,64}/g).join('\n');
     cert = `-----BEGIN CERTIFICATE-----\n${cert}\n-----END CERTIFICATE-----\n`;
     return cert;
 }
+
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
-    if (!authHeader)
-        throw new Error('No auth header')
+    if (!authHeader) {
+        throw new Error('No auth header');
+    }
 
-    if (!authHeader.toLocaleLowerCase().startsWith('bearer'))
-        throw new Error('Wrong header')
+    if (!authHeader.toLocaleLowerCase().startsWith('bearer')) {
+        throw new Error('Wrong header');
+    }
 
-    const split = authHeader.split(' ')
-    const token = split[1]
-    const jwt: Jwt = decode(token, { complete: true }) as Jwt
+    const split = authHeader.split(' ');
+    const token = split[1];
+    const jwt: Jwt = decode(token, {complete: true}) as Jwt;
 
-    let key = await getSigningKey(jwksUrl, jwt.header.kid)
-    return verify(token, key.publicKey, { algorithms: ['RS256'] }) as JwtPayload
+    let key = await getSigningKey(jwksUrl, jwt.header.kid);
+    return verify(token, key.publicKey, {algorithms: ['RS256']}) as JwtPayload
 }
